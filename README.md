@@ -4,7 +4,7 @@ A small research tool that scans Reddit communities for real user frustrations a
 
 It combines:
 
-- **[Bright Data MCP](https://www.npmjs.com/package/@brightdata/mcp)** for web search and scraping
+- **[Bright Data Remote MCP](https://docs.brightdata.com/ai/mcp-server/remote/quickstart)** for web search and scraping
 - **[NVIDIA NIM](https://build.nvidia.com/)** for LLM analysis
 - **Streamlit** for a simple UI
 
@@ -16,7 +16,7 @@ Enter a subreddit like `saas` or `startups`, and the app returns structured pain
 Subreddit input
     │
     ▼
-Bright Data MCP
+Bright Data Remote MCP (hosted)
     ├─ search_engine  → Google search for Reddit frustration posts
     └─ scrape_as_markdown → scrape the subreddit feed
     │
@@ -53,9 +53,8 @@ For each community, the engine:
 
 ## Prerequisites
 
-- Python 3.14+
+- Python 3.12+
 - [uv](https://docs.astral.sh/uv/) (recommended) or pip
-- Node.js + `npx` (required to launch the Bright Data MCP server)
 - API keys:
   - [Bright Data API token](https://brightdata.com/)
   - [NVIDIA API key](https://build.nvidia.com/)
@@ -75,6 +74,7 @@ uv sync
 ```env
 BRIGHTDATA_API_KEY=your_brightdata_api_key
 API_TOKEN=your_brightdata_api_key
+BRIGHTDATA_MCP_URL=https://mcp.brightdata.com/mcp
 NVIDIA_API_KEY=your_nvidia_api_key
 NVIDIA_NIM_MODEL=meta/llama-3.1-8b-instruct
 NVIDIA_NIM_BASE_URL=https://integrate.api.nvidia.com/v1
@@ -82,7 +82,8 @@ NVIDIA_NIM_BASE_URL=https://integrate.api.nvidia.com/v1
 
 Notes:
 
-- Bright Data MCP expects `API_TOKEN`. The app also accepts `BRIGHTDATA_API_KEY` or `BRIGHT_DATA_API_KEY`.
+- The app uses Bright Data's **hosted MCP endpoint** at `https://mcp.brightdata.com/mcp?token=...` — no Node.js or `npx` required.
+- Bright Data MCP accepts `API_TOKEN`. The app also reads `BRIGHTDATA_API_KEY` or `BRIGHT_DATA_API_KEY`.
 - `NVIDIA_NIM_MODEL` defaults to `meta/llama-3.3-70b-instruct` if omitted.
 
 ## Run the Streamlit app
@@ -97,7 +98,7 @@ Then:
 2. Click **Analyze community**
 3. Review the generated ideas or download the JSON report
 
-Analysis usually takes 1–2 minutes because it starts the Bright Data MCP server, performs search/scrape calls, then runs the NVIDIA model.
+Analysis usually takes 1–2 minutes because it calls Bright Data's hosted MCP for search/scrape, then runs the NVIDIA model.
 
 ## Run from the CLI
 
@@ -127,29 +128,9 @@ saas-painpoint-engine/
 
 ## Troubleshooting
 
-### `Cannot run MCP server without API_TOKEN env`
+### Missing Bright Data API token
 
-Bright Data MCP requires `API_TOKEN`. Either:
-
-- add it to `.env`, or
-- run the app via `uv run streamlit run app.py` / `uv run python main.py`, which injects it automatically from `BRIGHTDATA_API_KEY`
-
-If testing MCP manually:
-
-```bash
-set -a && source .env && set +a
-npx -y @brightdata/mcp
-```
-
-### `404` when installing `brightdata-mcp`
-
-The correct npm package is:
-
-```bash
-npx -y @brightdata/mcp
-```
-
-There is no package named `brightdata-mcp`.
+Set `BRIGHTDATA_API_KEY` or `API_TOKEN` in `.env`, or add them in Streamlit Community Cloud secrets.
 
 ### Analysis returns empty or weak results
 

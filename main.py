@@ -3,8 +3,8 @@ import json
 import asyncio
 from pathlib import Path
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -47,19 +47,17 @@ def get_nim_client():
     )
 
 
-def get_server_params():
+def get_brightdata_mcp_url():
     api_token = get_brightdata_api_token()
     if not api_token:
         raise ValueError("Set BRIGHTDATA_API_KEY (or API_TOKEN) in your .env file.")
-    return StdioServerParameters(
-        command="npx",
-        args=["-y", "@brightdata/mcp"],
-        env={
-            **os.environ,
-            "API_TOKEN": api_token,
-            "PRO_MODE": "false",
-        },
-    )
+
+    base_url = os.getenv("BRIGHTDATA_MCP_URL", "https://mcp.brightdata.com/mcp").rstrip("/")
+    if "token=" in base_url:
+        return base_url
+
+    separator = "&" if "?" in base_url else "?"
+    return f"{base_url}{separator}token={api_token}"
 
 
 def extract_tool_text(response):
@@ -95,9 +93,9 @@ async def run_pain_point_engine(niche_topic: str):
 
     target_model = os.getenv("NVIDIA_NIM_MODEL", "meta/llama-3.3-70b-instruct")
     nim_client = get_nim_client()
-    server_params = get_server_params()
+    mcp_url = get_brightdata_mcp_url()
 
-    async with stdio_client(server_params) as (read, write):
+    async with streamable_http_client(mcp_url) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
 
